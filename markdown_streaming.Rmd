@@ -1,0 +1,478 @@
+---
+title: 'Perfil sociodemográfico dos assinantes de plataformas de streaming de música de 2017 a 2019 - 
+  Uma análise a partir da TIC Domicílios'
+author: "Rômulo Damasceno"
+date: "12/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+load("C:/Users/romul/Desktop/Projetos portfolio/TIC e Plataformas de Streaming/Dados/ticfinal.RData")
+library(tidyverse)
+library(scales)
+library(knitr)
+
+
+
+```
+
+## Introdução
+
+Este trabalho tem por objetivo realizar uma análise exploratória do perfil sociodemográfico dos usuários de plataformas de streaming de música - Spotify, Deezer, Apple Music, dentre outros -, no período compreendido entre 2017 e 2019.
+
+Duas razões me levaram a escolher o período e o tema acima referidos. O primeiro diz respeito a disponibilidade dos dados, uma vez que a TIC Domicílios - realizada anualmente -, passou a inserir, no ano de 2017, uma pergunta que buscava identificar os usuários contratantes desse tipo de serviço. A segunda razão tem a ver com a curiosidade que me foi despertada quando observei, em meados de 2018, o "Boom" no uso desses aplicativos no meu ciclo social. Gostaria de identificar, nesse sentido, em que contextos essa dinâmica se repetiu, e para quais perfis de pessoas.
+
+Trata-se de uma grande oportunidade cedida pelos organizadores da TIC, pois enriquece enormemente o repertório informacional que dispomos para traçar estratégias para o segmento de mercado.
+
+## Considerações metodológicas
+
+O primeiro passo foi agrupar as bases de dados correspondentes a cada ano numa só, atribuindo a cada conjunto de dados um identificador chamado "*marcador_ano*". Dessa forma pude trabalhá-los de maneira agregada e desagregada, sem maiores problemas.
+
+Tratando-se de uma análise exploratória, escolhi variáveis sociodemográficas típicas das Ciências sociais, sendo estas:
+
+-   *Grande região de residência;*
+
+-   *Classe social;*
+
+-   *Renda familiar;*
+
+-   *Grau de instrução;*
+
+-   *Faixa etária;*
+
+-   *Sexo*
+
+-   *Raça/cor*.
+
+Todas foram cruzadas com a variável principal, de código **H12_B**:
+
+> " O respondente pagou por serviços de músicas pela Internet, como por exemplo Spotify ou Deezer? "
+
+## Tratamento das variáveis
+
+```{r message= FALSE, warning= FALSE}
+#Substituindo os valores numéricos do dicionário pelos nomes das categorias
+
+df_tic_final <- df_tic_final %>% 
+  mutate(sexo_cat       = case_when(SEXO == 1 ~ 'Masculino',
+                                  SEXO == 2 ~ 'Feminino'),
+         faixa_et_cat    = case_when(FAIXA_ETARIA == 1 ~ "10 a 15 anos",
+                                  FAIXA_ETARIA == 2 ~ "16 a 24 anos",
+                                  FAIXA_ETARIA == 3 ~ "25 a 34 anos",
+                                  FAIXA_ETARIA == 4 ~ "35 a 44 anos",
+                                  FAIXA_ETARIA == 5 ~ "45 a 59 anos",
+                                  FAIXA_ETARIA == 6 ~ "60+"),
+         grau_inst_cat   = case_when(GRAU_INSTRUCAO_2 == 1 ~ 'Analfabeto/Ed.Inf',
+                                   GRAU_INSTRUCAO_2 == 2 ~ 'Fundamental',
+                                   GRAU_INSTRUCAO_2 == 3 ~ 'Médio',
+                                   GRAU_INSTRUCAO_2 == 4 ~ 'Superior'),
+         renda_fam_cat   = case_when(RENDA_FAMILIAR_2 == 1 ~ 'Até 1 SM',
+                                   RENDA_FAMILIAR_2 == 2 ~ '1 a 2 SM',
+                                   RENDA_FAMILIAR_2 == 3 ~ '2 a 3 SM ',
+                                   RENDA_FAMILIAR_2 == 4 ~ '3 a 5 SM',
+                                   RENDA_FAMILIAR_2 == 5 ~ '5 a 10 SM',
+                                   RENDA_FAMILIAR_2 == 6 ~ 'Mais de 10 SM',
+                                   RENDA_FAMILIAR_2 == 7 ~ 'Não tem renda',
+                                   RENDA_FAMILIAR_2 == 97 ~ 'Não sabe',
+                                   RENDA_FAMILIAR_2 == 98 ~ 'Não respondeu'),
+         raca_cat        = case_when(RACA == 1 ~ 'Branco',
+                                   RACA == 2 ~ 'Preto',
+                                   RACA == 3 ~ 'Pardo',
+                                   RACA == 4 ~ 'Amarelo',
+                                   RACA == 5 ~ 'Indígena',
+                                   RACA == 98 ~ 'Não respondeu'),
+         cod_reg_cat     = case_when(COD_REGIAO_2 == 1 ~ 'Sudeste',
+                                   COD_REGIAO_2 == 2 ~ 'Nordeste',
+                                   COD_REGIAO_2 == 3 ~ 'Sul',
+                                   COD_REGIAO_2 == 4 ~ 'Norte',
+                                   COD_REGIAO_2 == 5 ~ 'Centro-Oeste'),
+         classe_2015_cat = case_when(CLASSE_2015  == 1 ~ 'A',
+                                     CLASSE_2015  == 2 ~ 'B',
+                                     CLASSE_2015  == 3 ~ 'C',
+                                     CLASSE_2015  == 4 ~ 'D/E'),
+         area_cat        = case_when(AREA == 1 ~ 'Urbana',
+                                     AREA == 2 ~ 'Rural'),
+         
+         pagou_mus_cat   = case_when(H12_B == 0  ~ 'Não',
+                                     H12_B == 1  ~ 'Sim',
+                                     H12_B == 97 ~ 'Não sabe'),
+         marcador_cat    = case_when(marcador == 1 ~ '2017',
+                                     marcador == 2 ~ '2018',
+                                     marcador == 3 ~ '2019'))
+
+         
+```
+
+## Análise exploratória
+
+### Assinantes x Não assinantes, 2017 a 2019
+
+```{r message= FALSE, warning= FALSE, results='asis'}
+
+#Summarise gerador do gráfico
+
+assinantes_nao <- df_tic_final %>% 
+  #Retirando os casos inválidos
+  filter(pagou_mus_cat != "Não sabe") %>%
+  group_by(pagou_mus_cat, marcador_cat) %>% 
+  summarise(N = sum(PESO)) %>% 
+  ungroup() %>% 
+  group_by(marcador_cat) %>% 
+  mutate(Proporção = prop.table(N))
+kable(assinantes_nao)
+
+#Plot
+
+assinantes_nao_g <-
+  assinantes_nao %>%  
+  filter(pagou_mus_cat == 'Sim') %>% 
+  ggplot(aes(x = marcador_cat, y = Proporção, group = 1)) +
+  geom_line(colour = 'violetred4') + 
+  geom_point(colour = 'violetred4') +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = '',
+       y = '',
+       title = "Percentual de assinantes de plataformas de streaming de música,
+2017 a 2019 - Brasil",
+       caption = 'TIC Domicílios 2017 - 2019') +
+  scale_x_discrete(labels = c('2017', '2018', '2019')) +
+  theme_minimal()
+
+print(assinantes_nao_g)
+```
+
+Entre os anos de 2017 e 2019, houve um aumento considerável no número de assinaturas de plataformas de streaming de musica, indo de 10,6% em 2017 para 13,2% em 2019. Um aumento de 24,8% num período de dois anos.
+
+## Assinantes por sexo
+
+```{r warning= FALSE, message= FALSE, results='asis'}
+
+#Summarise gerador do gráfico
+
+assinantes_sexo <- df_tic_final %>% 
+  #Retirando os casos inválidos
+  filter(pagou_mus_cat != 'Não', pagou_mus_cat != 'Não sabe') %>%
+  group_by(marcador_cat, sexo_cat) %>% 
+  summarise(N = sum(PESO)) %>% 
+  ungroup() %>% 
+  group_by(marcador_cat) %>% 
+  mutate(Proporção = prop.table(N))
+kable(assinantes_sexo)
+
+#Plot
+
+assinantes_sexo_g <-
+  assinantes_sexo %>%  
+  ggplot(aes(x = marcador_cat,
+             y = Proporção,
+             group = sexo_cat, 
+             colour = sexo_cat)) +
+  geom_line() +
+  geom_point() +
+  scale_colour_manual(values = c('orange3', 'mediumpurple1')) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = '',
+       y = '',
+       title = "Assinantes de plataformas de streaming de música por sexo,
+2017 a 2019 - Brasil",
+       caption = 'TIC Domicílios 2017 - 2019',
+       colour = '') +
+  scale_x_discrete(labels = c('2017', '2018', '2019')) +
+  theme_minimal()
+  
+
+print(assinantes_sexo_g)
+```
+
+A disparidade entre homens e mulheres ao assinar plataformas de streaming de música é notável nos três anos, sendo 2017 o ano de maior desproporção, com 30% mais homens que mulheres. Em 2018, observa-se uma tendência de convergência entre os gêneros, havendo uma diferença de apenas 7%. Finalmente, em 2019, observa-se um aumento da disparidade, com cerca de 13% mais homens que mulheres assinantes das plataformas.
+
+## Assinantes por raça/cor
+
+```{r warning= FALSE, message= FALSE, results='asis'}
+
+#Summarise gerador do gráfico
+
+assinantes_racacor <- df_tic_final %>% 
+  #Retirando os casos inválidos
+  filter(pagou_mus_cat != 'Não sabe') %>%
+  group_by(marcador_cat, raca_cat) %>% 
+  summarise(N = sum(PESO)) %>% 
+  ungroup() %>% 
+  group_by(marcador_cat) %>% 
+  mutate(Proporção = prop.table(N))
+
+kable(assinantes_racacor)
+
+#Plot
+
+assinantes_racacor_g <-
+  assinantes_racacor %>%  
+  ggplot(aes(x = marcador_cat,
+             y = Proporção,
+             group = raca_cat, 
+             colour = raca_cat)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = '',
+       y = '',
+       title = "Assinantes de plataformas de streaming de música por raça/cor,
+2017 a 2019 - Brasil",
+       caption = 'TIC Domicílios 2017 - 2019',
+       colour = '') +
+  scale_x_discrete(labels = c('2017', '2018', '2019')) +
+  theme_minimal() +
+  scale_colour_brewer(palette = 'Dark2')
+  
+
+print(assinantes_racacor_g)
+```
+
+Indivíduos brancos e pardos representam grande parte das assinaturas de streaming de música. O que faz sentido, uma vez que a maior parte da população brasileira pertence a essas duas etnias.
+
+```{r warning= FALSE, message= FALSE, results='asis'}
+
+#Summarise gerador do gráfico
+
+assinantes_faixa_et <- df_tic_final %>% 
+  #Retirando os casos inválidos
+  filter(pagou_mus_cat != 'Não', 
+         pagou_mus_cat != 'Não sabe', 
+         faixa_et_cat  != 'NA') %>%
+  group_by(marcador_cat, faixa_et_cat) %>% 
+  summarise(N = sum(PESO)) %>% 
+  ungroup() %>% 
+  group_by(marcador_cat) %>% 
+  mutate(Proporção = prop.table(N)) 
+  
+kable(assinantes_faixa_et)
+
+#Plot
+
+assinantes_faixaet_g <-
+  assinantes_faixa_et %>%  
+  ggplot(aes(x = marcador_cat,
+             y = Proporção,
+             group = faixa_et_cat, 
+             colour = faixa_et_cat)) +
+  geom_line() +
+  geom_point() +
+  scale_colour_manual(values = c('orange3', 'mediumpurple1')) +
+  scale_y_continuous(labels = scales::percent, limits = c(0,0.5)) +
+  labs(x = '',
+       y = '',
+       title = "Assinantes de plataformas de streaming de música por faixa
+etária, 2017 a 2019 - Brasil",
+       caption = 'TIC Domicílios 2017 - 2019',
+       colour = '') +
+  scale_x_discrete(labels = c('2017', '2018', '2019')) +
+  theme_minimal() +
+  scale_colour_brewer(palette = 'Dark2')
+  
+
+print(assinantes_faixaet_g)
+
+```
+
+Várias coisas interessantes aconteceram com o perfil etário ao longo do período. A que mais salta os olhos, foi o aumento expressivo no número de assinantes de 10 a 15 anos no período de 2018 para 2019. Em seguida, o declínio progressivo do interesse das faixas de 25 a 35 anos de idade no serviço. Os indivíduos de 45 a 59 anos de idade parecem também estar perdendo o interesse nas plataformas, havendo uma redução quando comparamos os valores de 2018 e 2019 para a faixa etária.
+
+## Assinantes por grau de instrução
+
+```{r warning= FALSE, message= FALSE, results='asis'}
+
+#Summarise gerador do gráfico
+
+assinantes_ginst <- df_tic_final %>% 
+  #Retirando os casos inválidos
+  filter(pagou_mus_cat != 'Não', 
+         pagou_mus_cat != 'Não sabe', 
+         faixa_et_cat  != 'NA') %>%
+  group_by(marcador_cat, grau_inst_cat) %>% 
+  summarise(N = sum(PESO)) %>% 
+  ungroup() %>% 
+  group_by(marcador_cat) %>% 
+  mutate(Proporção = prop.table(N)) 
+
+kable(assinantes_ginst)
+#Plot
+
+assinantes_ginst_g <-
+  assinantes_ginst %>%  
+  ggplot(aes(x = marcador_cat,
+             y = Proporção,
+             group = grau_inst_cat, 
+             colour = grau_inst_cat)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = scales::percent, limits = c(0,0.5)) +
+  labs(x = '',
+       y = '',
+       title = "Assinantes de plataformas de streaming de música por grau
+de instrução, 2017 a 2019 - Brasil",
+       caption = 'TIC Domicílios 2017 - 2019',
+       colour = '') +
+  scale_x_discrete(labels = c('2017', '2018', '2019')) +
+  theme_minimal() +
+  scale_colour_brewer(palette = 'Dark2')
+  
+
+print(assinantes_ginst_g)
+
+```
+
+As plataformas de streaming são muito mais populares nos níveis de escolaridade mais altos nos três anos, mas há um leve declínio no percentual de assinaturas entre os indivíduos que possuem ensino superior de 2018 a 2019. Além disso, há um leve crescimento no percentual de estudantes de ensino fundamental no mesmo período.
+
+## Assinantes por renda familiar
+
+```{r warning= FALSE, message= FALSE, results='asis'}
+
+#Summarise gerador do gráfico
+assinantes_rendfam <- df_tic_final %>%
+  filter(renda_fam_cat != 'Não tem renda') %>% 
+  #Retirando os casos inválidos
+  filter(pagou_mus_cat != 'Não', 
+         pagou_mus_cat != 'Não sabe', 
+         faixa_et_cat  != 'NA') %>%
+  group_by(marcador_cat, renda_fam_cat) %>% 
+  summarise(N = sum(PESO)) %>% 
+  ungroup() %>% 
+  group_by(marcador_cat) %>% 
+  mutate(Proporção = prop.table(N))
+
+kable(assinantes_rendfam)
+
+
+#Plot
+
+assinantes_rendfam_g <-
+  assinantes_rendfam %>%  
+  ggplot(aes(x = marcador_cat,
+             y = Proporção,
+             group = renda_fam_cat, 
+             colour = renda_fam_cat)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = scales::percent, limits = c(0,0.3)) +
+  labs(x = '',
+       y = '',
+       title = 
+"Assinantes de plataformas de streaming de música por renda familiar, 
+2017 a 2019 - Brasil",
+       caption = 'TIC Domicílios 2017 - 2019',
+       colour = '') +
+  scale_x_discrete(labels = c('2017', '2018', '2019')) +
+  theme_minimal() +
+  scale_colour_brewer(palette = 'Dark2')
+  
+
+print(assinantes_rendfam_g)
+```
+
+Indivíduos de famílias de faixas de renda intermediárias são aquelas que mais assinaram plataformas de streaming no ano de 2018 e 2019 (3 a 5 S.M's). É notável, entretanto, que houve um aumento não desprezível (4%) no percentual de assinaturas de indivíduos de famílias que ganham até 1 S.M. Outras faixas de renda variam de maneira menos uniforme.
+
+## Assinantes por Grande Região
+
+```{r warning= FALSE, message= FALSE, results='asis'}
+
+#Summarise gerador do gráfico
+assinantes_regiao <- df_tic_final %>%
+  filter(renda_fam_cat != 'Não tem renda') %>% 
+  #Retirando os casos inválidos
+  filter(pagou_mus_cat != 'Não', 
+         pagou_mus_cat != 'Não sabe', 
+         faixa_et_cat  != 'NA') %>%
+  group_by(marcador_cat, cod_reg_cat) %>% 
+  summarise(N = sum(PESO)) %>% 
+  ungroup() %>% 
+  group_by(marcador_cat) %>% 
+  mutate(Proporção = prop.table(N))
+
+kable(assinantes_regiao)
+
+
+#Plot
+
+assinantes_regiao_g <-
+  assinantes_regiao %>%  
+  ggplot(aes(x = marcador_cat,
+             y = Proporção,
+             group = cod_reg_cat, 
+             colour = cod_reg_cat)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = scales::percent, limits = c(0,0.7)) +
+  labs(x = '',
+       y = '',
+       title = "Assinantes de plataformas de streaming de música,
+2017 a 2019 - Grandes regiões do Brasil",
+       caption = 'TIC Domicílios 2017 - 2019',
+       colour = '') +
+  scale_x_discrete(labels = c('2017', '2018', '2019')) +
+  theme_minimal() +
+  scale_colour_brewer(palette = 'Dark2')
+  
+
+print(assinantes_regiao_g)
+```
+
+A maior parte das assinaturas se concentram no Sudeste, e se mantêm constantes nos três anos pesquisados. É perceptível ainda que há um leve crescimento no percentual de assinaturas na região Nordeste.
+
+## Assinantes por classe social
+
+```{r warning= FALSE, message= FALSE, results='asis'}
+
+#Summarise gerador do gráfico
+assinantes_classesoc <- df_tic_final %>%
+  filter(renda_fam_cat != 'Não tem renda') %>% 
+  #Retirando os casos inválidos
+  filter(pagou_mus_cat != 'Não', 
+         pagou_mus_cat != 'Não sabe', 
+         faixa_et_cat  != 'NA') %>%
+  group_by(marcador_cat, classe_2015_cat) %>% 
+  summarise(N = sum(PESO)) %>% 
+  ungroup() %>% 
+  group_by(marcador_cat) %>% 
+  mutate(Proporção = prop.table(N))
+
+kable(assinantes_classesoc)
+
+
+#Plot
+
+assinantes_classesoc_g <-
+  assinantes_classesoc %>%  
+  ggplot(aes(x = marcador_cat,
+             y = Proporção,
+             group = classe_2015_cat, 
+             colour = classe_2015_cat)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = scales::percent, limits = c(0,0.7)) +
+  labs(x = '',
+       y = '',
+       title = 
+"Assinantes de plataformas de streaming de música por 
+classe social, 2017 a 2019 - Brasil",
+       caption = 'TIC Domicílios 2017 - 2019',
+       colour = '') +
+  scale_x_discrete(labels = c('2017', '2018', '2019')) +
+  theme_minimal() +
+  scale_colour_brewer(palette = 'Dark2')
+  
+
+print(assinantes_classesoc_g)
+```
+
+Individuos pertencentes à classe B e C são a maioria das assinaturas. Há, porém, um crescimento considerável no número de assinaturas nas classes D e E nos anos de 2018 e 2019. A classe A vêm contratando cada vez menos o serviço.
+
+## Conclusões
+
+O número de assinantes de plataformas de streaming aumentou consideravelmente nos anos pesquisados, em especial de 2018 para 2019. Dado que se trata de um serviço que possui alta demanda e preços cada vez mais acessíveis, há razões para acreditar que continue crescendo.
+
+Sem nos dedicar a um modelo mais rebuscado, podemos tirar algumas conclusões preliminares sobre o perfil do assinante de plataforma de streaming. Em geral, temos que o assinante seria: Um homem, de 10 a 24 anos de idade, branco ou pardo, com nível superior ou médio, com renda familiar que vai de 1 a 3 salário mínimos, pertencente as classes B ou C e residente da região Sudeste.
+
+Evidentemente, muitas especificidades são desconsideradas ao analisar apenas as frequências de cada variável sociodemográfica, mas este esforço ajuda a pintar um cenário geral que pode nos direcionar a modelos explicativos um pouco mais complexos, como por exemplo as regressões logísticas (modelo logit) , que trabalharei futuramente.
+
+Por fim, este é o primeiro trabalho descritivo em R que realizei e formalizei num documento Markdown, e por isso ficaria muito contente em receber feedbacks.
+
+Obrigado pela leitura!
