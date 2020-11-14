@@ -1,2 +1,2 @@
 # analisesdescritivas
-Repositórios de análises descritivas independentes
+Neste repositório estarão todas as análises descritivas que eu realizar em R ou Python.
